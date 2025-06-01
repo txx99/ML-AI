@@ -1,80 +1,100 @@
-# import all necessary libraries here
 import pandas as pd
 import numpy as np
+import data_preprocessor as dp
 import statistics as stats
-import scipy.stats as scistat
 from collections import Counter
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, accuracy_score
 
-# 1. Impute Missing Values
-def impute_missing_values(data, strategy='mean'):
-    """
-    Fill missing values in the dataset.
-    :param data: pandas DataFrame
-    :param strategy: str, imputation method ('mean', 'median', 'mode')
-    :return: pandas DataFrame
-    """
+data = pd.read_csv('messy_data.csv')
+clean_data = data.copy()
 
+# IMPUTING DATA =================================================
+# 2. Preprocess the data
+cleaned_data = dp.impute_missing_values(data=clean_data, strategy='mean')
+# print(cleaned_data)
+# print(cleaned_data['j'])
+# print(cleaned_data['z'])
+# cleaned_data = impute(clean_data, "mean")
+
+def impute(data, strategy):
     data2=data.copy()
     numericCols=[]
     factoredCols=[]
+    # separate targets from data
     colNames=list(data2.columns.values)
-    # do NOT manipulate 'target' column; needed for y_train in lin_regression 
-    colNames=colNames[1:] #except 'target' column
-
-    #categorise cols by numerical or factored dtype
     for col in colNames:
         #delete cols missing 50% of data
         if pd.isnull(data2[col]).sum()>=(len(data2[col]))*.5:
+            print(col, len(data2[col]))
             data2=data2.drop(columns=col)
         elif data2[col].dtype == 'object':
             factoredCols.append(col)
         else:
             numericCols.append(col)
+#     for col in numericCols:
+#         nans=np.where(pd.isnull(data2[col]))[0]
+#         for j in nans:
+#             if strategy == 'mean':
+#                 data2.loc[j, col]=np.mean(data2[col])
+#                 # data2.loc[j, col]= data2[col].mean()
+#             #     for i in numericCols:
+#             # if strategy == 'mean':
+#             #     data2['i'].fillna(data2['i'].mean(), inplace=True)
+#             elif strategy=='mode':
+#                 data2.loc[j, col]=stats.mode(data2[col])
+#             elif strategy =='median':
+#                 data2.loc[j, col]=np.median(data2[col])
+#     for col in factoredCols:
+#         data2[col]=data2[col].fillna(stats.mode(data2[col]))
+#         # data2.loc[j, col]=stats.mode(data2[col])
 
-        
-    for col in numericCols:
-        nans=np.where(pd.isnull(data2[col]))[0] # makes an array, we only want element [0] == list of rows
-        for row in nans:
-            if strategy == 'mean':
-                data2.loc[row, col]=np.mean(data2[col]) #replace nan locations w stats of choice
-            elif strategy=='mode':
-                data2.loc[row, col]=stats.mode(data2[col]) 
-            elif strategy =='median':
-                data2.loc[row, col]=np.median(data2[col])
-    
-    #fill in for categorical variables?
-    for col in factoredCols:
-        data2[col]=data2[col].fillna(stats.mode(data2[col])) #inplace=True not working so we directly reassign
+#     return data2
 
-    return data2
+# # missing_data = data.isnull().sum()
+# # print(missing_data)
+# # print(data['j'])
+# imp=impute(data, 'mean')
+# # print(imp['j'])
+# # missing_data = imp.isnull().sum()
+# # print(missing_data)
 
-# 2. Remove Duplicates
-def remove_duplicates(data):
-    """
-    Remove duplicate rows from the dataset.
-    :param data: pandas DataFrame
-    :return: pandas DataFrame
-    """
-    data2=data.copy()
-    data2=data2.drop_duplicates()
+# print(list(imp.columns.values))
 
-    return data2
 
-# 3. Normalize Numerical Data
+# REMOVING DUPLICATES ================================================
+# clean_data = dp.remove_duplicates(clean_data)
+# dups=cleaned_data.duplicated()
+dups=data.duplicated().sum()
+print('dups =', dups)
+dups=cleaned_data.copy().drop_duplicates()
+
+print('dups = ', dups)
+
+
+#NORMALISE ================================================
+# scaling = adjust the 'scale' between two columns that moght have different units and drastically different scales
+# dont want ML thrown off by this, so we 'scale' or 'standardise' these columns 
+# MinMaxScaler = x-min / (max-min) <-- max + min of column
+# StdScaler = x-mean/std <-- of column
+# in ML, would apply scaler then apply transform on the data
+# training data = .fit_transform() , testing//novel data = .transform()
+# which to use? depends on data but StdScaler usually better/common
+# print("GOING OGING", dups)
+# data2 = pd.get_dummies(dups, drop_first=True)
+# print("Gone", data2)
+
 def normalize_data(data,method='minmax'):
     """Apply normalization to numerical features.
     :param data: pandas DataFrame
     :param method: str, normalization method ('minmax' (default) or 'standard')
     """
-    data2=data.copy()
-    # one hot for categoricals
-    data = pd.get_dummies(data2, drop_first=True)
-
+    data = pd.get_dummies(data, drop_first=True)
+    print(data)
     # scalers
+    # data=np.array(data)
     mmScaler=MinMaxScaler()
     stdScaler=StandardScaler()
 
@@ -93,37 +113,62 @@ def normalize_data(data,method='minmax'):
         stdScaler.fit(data[numericCols])
         data[numericCols]=stdScaler.transform(data[numericCols])
 
+
     return data
 
-# 4. Remove Redundant Features   
+normalData = normalize_data(dups)
+print(normalData)
+
+
+
+# ====== REMOVE REDUNDANT FEATURES ==========================================
+# clean_data = dp.remove_redundant_features(clean_data)
+
 def remove_redundant_features(data, threshold=0.9):
     """Remove redundant or duplicate columns.
     :param data: pandas DataFrame
     :param threshold: float, correlation threshold
     :return: pandas DataFrame
     """
+    
     data2=data.copy()
-    # make correlation matrix (~like heatmap)
+    # make correlation matrix (liek heatmap)
     corrMatrix= data2.corr(numeric_only=True)
-
+    print(corrMatrix)
     # highly correlated features = are giving us the same information --> can drop one
     #list and remove highly correlated fetaures
-    removable_array = np.where(abs(corrMatrix)>threshold) # gives array[rows], array[cols]
-    removable_indices=removable_array[0].tolist() #converts only array[rows] to list
-    # dict of how many times each row appears --> all appear once bc self-matching of 1.00 correlation
-    removables=Counter(removable_indices)    
-    removables = [k for k, v in removables.items() if v>1] 
+    removable_array = np.where(abs(corrMatrix)>threshold)
+    # removable_array = 
+    #^ returns numeric positions in corrMatrix, including 1.000 for all
+    # removable_indices=np.array()
+    # removable_indices=[]
+    # for [i, j] in removable_array:
+    #     print(i, j)
+    #     if i!=j:
+    #         removable_indices.append(i)
+    # print(removable_indices)
 
-    #currently have cols as numeric position, convert to col names
+    removable_indices=removable_array[0].tolist()    
+    # removable_indices=list(set(removable_indices))
+    removables=Counter(removable_indices)
+    print(removables)
+    removables = [k for k, v in removables.items() if v>1]
     colNames=list(data2.columns.values)
+    print(colNames)
     for i in removables:
+        # print(colNames[i])
         remove=colNames[i]
         data2=data2.drop(columns=remove)
+    print(data2)
+
 
     return data2
 
-# ---------------------------------------------------
+# no_dups = remove_redundant_features(normalData)
 
+
+
+# log regression model ========================
 def simple_model(input_data, split_data=True, scale_data=False, print_report=False):
     """
     A simple logistic regression model for target classification.
@@ -146,7 +191,7 @@ def simple_model(input_data, split_data=True, scale_data=False, print_report=Fal
     9. Prints the accuracy and classification report (if print_report is True).
     """
 
-    # if there's any missing data, remove the [default] rows (axis=0) or cols(axis=1)
+    # if there's any missing data, remove the columns
     input_data.dropna(inplace=True)
 
     # split the data into features and target
@@ -156,9 +201,12 @@ def simple_model(input_data, split_data=True, scale_data=False, print_report=Fal
     # if the column is not numeric, encode it (one-hot)
     for col in features.columns:
         if features[col].dtype == 'object':
-            features = pd.concat([features, pd.get_dummies(features[col], prefix=col)], axis=1)
+            onehot = pd.get_dummies(features[col], prefix=col).astype(float)
+            # get_dummies() = one-hot encoding as boolean --> .astype() to convert if needed
+            # but usually dont need to convert booleans, the program will know how ot interpret 
+            features = pd.concat([features, onehot], axis=1)
+            # concatenating the extra columns into the OG df by the horizontal (1) axis
             features.drop(col, axis=1, inplace=True)
-            
     X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, stratify=target, random_state=42)
 
     if scale_data:
@@ -168,6 +216,7 @@ def simple_model(input_data, split_data=True, scale_data=False, print_report=Fal
         
     # instantiate and fit the model
     log_reg = LogisticRegression(random_state=42, max_iter=100, solver='liblinear', penalty='l2', C=1.0)
+
     log_reg.fit(X_train, y_train)
 
     # make predictions and evaluate the model
@@ -184,3 +233,8 @@ def simple_model(input_data, split_data=True, scale_data=False, print_report=Fal
         print('Read more about the classification report: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html and https://www.nb-data.com/p/breaking-down-the-classification')
     
     return None
+
+
+# simple_model(data, scale_data=True)
+# getting error of 'classifier' innfo in the data. we did one-hot encoding for the categroical data 
+# but currently it's not being scaled...
