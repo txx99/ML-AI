@@ -1,3 +1,3 @@
 # ML-AI
 Clinical Bioinformatics ML + AI course.
-Python + Jupyter Notebook code using pixi environment.
+Python + Jupyter Notebook code using pixi environment, with specifications found in pixi.toml file.
