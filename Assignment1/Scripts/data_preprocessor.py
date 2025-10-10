@@ -74,10 +74,6 @@ def normalize_data(data,method='minmax'):
     # one hot for categoricals
     data = pd.get_dummies(data2, drop_first=True)
 
-    # scalers
-    mmScaler=MinMaxScaler()
-    stdScaler=StandardScaler()
-
     #list of cols to scale
     colNames=list(data.columns.values)
     numericCols=[]
@@ -85,6 +81,10 @@ def normalize_data(data,method='minmax'):
         if data[col].dtype != 'object':
             numericCols.append(col)
 
+
+    # instantiate scalers
+    mmScaler=MinMaxScaler()
+    stdScaler=StandardScaler()
     #fit + transform by scaler
     if method == 'minmax':
         mmScaler.fit(data[numericCols])
@@ -103,9 +103,9 @@ def remove_redundant_features(data, threshold=0.9):
     :return: pandas DataFrame
     """
     data2=data.copy()
+
     # make correlation matrix (~like heatmap)
     corrMatrix= data2.corr(numeric_only=True)
-
     # highly correlated features = are giving us the same information --> can drop one
     #list and remove highly correlated fetaures
     removable_array = np.where(abs(corrMatrix)>threshold) # gives array[rows], array[cols]

@@ -26,7 +26,7 @@ def simple_model(input_data, split_data=True, scale_data=False, print_report=Fal
     9. Prints the accuracy and classification report (if print_report is True).
     """
 
-    # if there's any missing data, remove the columns
+    # if there's any missing data in a row (default), drop the row
     input_data.dropna(inplace=True)
 
     # split the data into features and target
@@ -36,13 +36,15 @@ def simple_model(input_data, split_data=True, scale_data=False, print_report=Fal
     # if the column is not numeric, encode it (one-hot)
     for col in features.columns:
         if features[col].dtype == 'object':
-            features = pd.concat([features, pd.get_dummies(features[col], prefix=col)], axis=1)
-            features.drop(col, axis=1, inplace=True)
+            features = pd.concat([features, pd.get_dummies(features[col], prefix=col)], axis=1) # concat the one-factor level cols to the df
+            features.drop(col, axis=1, inplace=True) # dorp the original col
 
     if split_data:
         # perform a stratified split on the data
         X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42, stratify=target)
-
+        # stratify: train-test classes split based on stratify= (target) in a stratified fashion, ie whatever natural 0-1 split exists in target is used in train-test split
+        # if there is a class imbalance, stratify= will preserve it/prevent class elimination 
+         
     if scale_data:
         # scale the data
         scaler = StandardScaler()
@@ -57,6 +59,9 @@ def simple_model(input_data, split_data=True, scale_data=False, print_report=Fal
     y_pred = log_reg.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
     report = classification_report(y_test, y_pred)
+    # macro average (averaging the unweighted mean per label)
+    # weighted average (averaging the support-weighted mean per label)
+    # support: n for that target class
 
     print(f'Accuracy: {accuracy}')
     
