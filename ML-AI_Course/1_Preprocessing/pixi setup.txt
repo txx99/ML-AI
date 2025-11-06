@@ -1,0 +1,9 @@
+pixi installed WITHOUT the following:
+[pypi-dependencies]
+scikit-learn-extra = ">=0.3.0, <0.4"
+pyradiomics-bhklab = ">=3.1.4, <4"
+
+tried installing this first but DIDNT WORK:
+cython = "*" # Required for building sklearn-extra
+setuptools = "*" # Required for building from source
+wheel = "*" # Also helps with building packages
