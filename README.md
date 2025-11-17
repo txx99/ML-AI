@@ -1,4 +1,4 @@
-# ML-AI
+# ML-Projects
 Various ML-AI-based coding projects, primarily in Python and Jupyter Notebook.
 
 ## DrugDiscovery
