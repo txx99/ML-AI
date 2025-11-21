@@ -1,5 +1,8 @@
 Build an ML model for drug discovery using the ChEMBL database (https://www.ebi.ac.uk/chembl/) of bioactive molecules with drug-inducing properties.
 ## Acetylcholinesterase [CHEMBL220]
+main.py = entire code in one python script \
+DD_ML_Part_X = code split into 4 parts in Jupyter notebook, with markdown commentary  
+
 ### **Query:** 
 'acetylcholinesterase' *Human Acetylcholinesterase*
 ### **Preprocess:** 
